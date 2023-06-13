@@ -91,3 +91,7 @@ If the bot for any reason throws an exception, the bot will fold.
 - Strategies cannot be copied from other bots (Inspiration is ok)
 - The callback function must return within 0.2 second
 
+## Submit bot
+Create a pull request to Jgfrausing/JsPoker (ensure that it does not end in the original repository (mdp/JsPoker)). The pull request should only contain your bot and it should be placed in the assigned round-folder.
+
+Good luck.
