@@ -56,13 +56,15 @@ function update(game) {
     return game.self.chips
 }
 ```
-Congratulations, you´ve created a Poker bot. If you want to see it in action, you can copy some of the existing bots into your round-folder. After this open a terminal and run `play:sh 3 10`. 10 rounds will now be played and displayed in the terminal. Alternatively, you can run `node play.js 3 10 > some-file.txt`. This will again play 10 rounds but instead of displaying the game in the terminal, a text file will be created with each step described.
+Congratulations, you´ve created a Poker bot. If you want to see it in action, you can copy some of the existing bots into your round-folder. After this open a terminal and run `./play.sh 3 10`. 10 rounds will now be played and displayed in the terminal. Alternatively, you can run `node play.js 3 10 > some-file.txt`. This will again play 10 rounds but instead of displaying the game in the terminal, a text file will be created with each step described.
 
 Lets break down the content of the bot, you've just created.
 Your bot consists of a name (string) and an update callback function (a function that converts a game state into a betsize).
 
 An example of game state can be found [here](https://gist.github.com/mdp/050cd82f651eb9f9b9c8). Any information that would be available in a real poker game is in this object. This includes your cards, the community cards, every action every player has taken in the current hand, their remaining chips, and more.
 My Awesome Bot will always go all-in. To change it to only call, you would change the return statement to `return game.betting.call`.
+   
+**If the bot for any reason throws an exception, the bot will fold.**
 
 ### Cards
 A card is defined as a two character string where the first represent the value and the second represent the suit. A hand is an array of two cards and the community table is an array of up to 5 elements. A bot that raises on pairs and folds otherwise could have the following update callback function: 
@@ -84,10 +86,8 @@ function update(game) {
 ### Details
 The game state also includes the amount to call and the minimum allowed raise. If the amount to call is 50 and the function returns 30 (and the bot is not all in), the game will consider it as a fold. Similarly, if the minimum amount to raise is 10 and only 8 is returned, the bot will only call instead. Don't worry too much about this though.
 
-If the bot for any reason throws an exception, the bot will fold.
-
 ## Rules
-- No import/require allowed (copy paste is very must allowed)
+- No import/require allowed (copy paste is very much allowed)
 - Strategies cannot be copied from other bots (Inspiration is ok)
 - The callback function must return within 0.2 second
 
