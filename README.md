@@ -43,8 +43,8 @@ This fork contains two scripts: `play.js` and `evaluate.js`.
 4. Have fun!
 
 Two helper-scripts has been created: 
-- `simulate.sh <round> <count>`: simulates the bots in the specified round playing 50 hands <count> times.
-- `play:sh <round> <hands>`: Displays a single game for the specified round and hands
+- `./simulate.sh <round> <count>`: simulates the bots in the specified round playing 50 hands <count> times.
+- `./play.sh <round> <hands>`: Displays a single game for the specified round and hands
 
 ## Building your own bot
 Assuming you've been assigned to round 3. In folder rounds/3 create a file `myAwesomeBot.js` (Give it better name). The content of it should be the following (again remember to rename it): 
