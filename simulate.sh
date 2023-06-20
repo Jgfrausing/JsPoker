@@ -10,13 +10,15 @@ fi
 round=$1
 count=$2
 
-echo "Simulating round $round with $count nodes"
+# Delete "./score/round" + round + ".json" if it exists
+if [ -f "./score/round$round.json" ]; then
+  rm "./score/round$round.json"
+fi
 
 for (( i=1; i<=$count; i++ ))
 do
-  echo "Starting node $i"
   node play $round > res.txt 
-  res=`node append-results.js $round`
+  node append-results.js $round
+  # wait 1 second
+  # sleep 1
 done
-
-echo $res

@@ -1,5 +1,6 @@
 const fs = require("fs");
 var Table = require("cli-table");
+var handEval = require("./hand");
 
 function evaluate(round, speed) {
   let file = "logs/round" + round + ".json";
@@ -63,124 +64,25 @@ function calculateHandName(cards, handName) {
   ) {
     return handName;
   }
-  // map face cards and T to their numerical values
-  const values = {
-    2: [],
-    3: [],
-    4: [],
-    5: [],
-    6: [],
-    7: [],
-    8: [],
-    9: [],
-    T: [],
-    J: [],
-    Q: [],
-    K: [],
-    A: [],
-  };
 
-  // initialize variables to hold counts of each suit and value
-  const suits = { h: [], s: [], c: [], d: [] };
-
-  // iterate through the cards and count suits and values
-  cards.forEach((card) => {
-    const value = card[0];
-    const suit = card[1];
-    values[value].push(card);
-    suits[suit].push(card);
-  });
-
-  // check for flushes
-  const flushSuit = Object.values(suits).filter((count) => count >= 5);
-  var isFlush = (values) => {
-    return (
-      flushSuit &&
-      values.every((value) => value.some((x) => x[1] === flushSuit[0][1]))
-    );
-  };
-  // check for straights
-  let isStraight = (false, []);
-  let isStraightFlush = false;
-  let valuesArray = Object.keys(values);
-  for (let i = 12; i >= 5; i--) {
-    if (
-      valuesArray[i] > 0 &&
-      valuesArray[i + 1] > 0 &&
-      valuesArray[i + 2] > 0 &&
-      valuesArray[i + 3] > 0 &&
-      valuesArray[i + 4] > 0
-    ) {
-      isStraight = (true, values.slice(i - 4, i));
-      if (isFlush(values.slice(i - 4, i))) {
-        isStraightFlush = true;
-      }
-      break;
-    }
-  }
-
-  // check for straight flushes and royal flushes
-  const isRoyalFlush =
-    isStraightFlush &&
-    values[10].length > 0 &&
-    values[11].length > 0 &&
-    values[12].length > 0 &&
-    values[13].length > 0 &&
-    values[14].length > 0;
-
-  var xOfAKind = (n) => {
-    return Object.values(values).some((key) => key.length === n);
-  };
-
-  if (xOfAKind(4)) {
-    return (
-      "Four of a kind " +
-      prettyPrintCards(
-        Object.values(values)
-          .filter((key) => key.length === 4)
-          .join(", ")
-      )
-    );
-  } else if (xOfAKind(3) && xOfAKind(2)) {
+  if (handEval.straightFlush(cards)) {
+    return "Straight Flush";
+  } else if (handEval.fourOfAKind(cards)) {
+    return "Four of a kind";
+  } else if (handEval.fullHouse(cards)) {
     return "Full house";
-  } else if (xOfAKind(3)) {
-    return (
-      "Three of a kind " +
-      prettyPrintCards(
-        Object.values(values)
-          .filter((key) => key.length === 3)
-          .join(", ")
-      )
-    );
-  } else if (
-    Object.values(values).filter((key) => key.length === 2).length >= 2
-  ) {
-    return (
-      "Two pair " +
-      prettyPrintCards(
-        Object.values(values)
-          .filter((key) => key.length === 2)
-          .join(", ")
-      )
-    );
-  } else if (xOfAKind(2)) {
-    return (
-      "Pair " +
-      prettyPrintCards(
-        Object.values(values)
-          .filter((key) => key.length === 2)
-          .join(", ")
-      )
-    );
+  } else if (handEval.flush(cards)) {
+    return "Flush";
+  } else if (handEval.straight(cards)) {
+    return "Straight";
+  } else if (handEval.threeOfAKind(cards)) {
+    return "Three of a kind";
+  } else if (handEval.twoPairs(cards)) {
+    return "Two pair";
+  } else if (handEval.onePair(cards)) {
+    return "Pair";
   } else {
-    return (
-      "High card " +
-      prettyPrintCards(
-        Object.values(values)[
-          Object.keys(values).reduce((a, _, b) => (a > b ? a : b))
-        ].join(", ")
-      )
-    );
+    return "High card";
   }
 }
 
@@ -200,7 +102,7 @@ function getStages(round, stage) {
       default:
         count = 0;
     }
-    return round.community.slice(0, count).join(", ");
+    return round.community.slice(0, count);
   }
 
   let actionIdx = 0;
@@ -210,7 +112,8 @@ function getStages(round, stage) {
     found = false;
     for (let index = 0; index < round.players.length; index++) {
       var blindsOffset = stage == "pre-flop" ? 2 : 0;
-      const player = round.players[(index + blindsOffset) % round.players.length];
+      const player =
+        round.players[(index + blindsOffset) % round.players.length];
       if (player.actions[stage]) {
         let action = player.actions[stage][actionIdx];
         comulativeChipsSpend = () => {
@@ -233,6 +136,10 @@ function getStages(round, stage) {
             action: action.type,
             bet: action.bet || 0,
             hand: player.cards,
+            handName: calculateHandName([
+              ...player.cards,
+              ...communityCards(round, stage),
+            ]),
           });
         }
       }
@@ -243,7 +150,7 @@ function getStages(round, stage) {
   return {
     stage: stage,
     actions: actions,
-    communityCards: communityCards(round, stage),
+    communityCards: communityCards(round, stage).join(", "),
   };
 }
 
@@ -313,7 +220,7 @@ async function displayGame(hands, speed) {
 
       i++;
       if (speed != 0) {
-        await sleep(5000);
+        await sleep(8000);
       }
       progress.stage = 1;
       progress.action = 1;
@@ -338,7 +245,7 @@ function displayHand(round, progress) {
     stageIsDone = displayStage(
       round.stages[i],
       progress,
-      progress.stage - 1 == i,
+      progress.stage - 1 == i
     );
   }
 
@@ -369,8 +276,8 @@ function displayStage(stage, progress, isFinal) {
   }
   if (stage.actions.length != 0) {
     var table = new Table({
-      head: ["Player", "Action", "Chips", "Bet", "Hand"],
-      colWidths: [30, 10, 10, 10, 10],
+      head: ["Player", "Action", "Chips", "Bet", "Hand", "HandName"],
+      colWidths: [30, 10, 10, 10, 10, 30],
     });
 
     table.push(
@@ -379,7 +286,8 @@ function displayStage(stage, progress, isFinal) {
         action.action,
         action.chips,
         action.bet,
-        prettyPrintCards(action.hand.join(", ")), 
+        prettyPrintCards(action.hand.join(", ")),
+        action.handName,
       ])
     );
     console.log(table.toString());
